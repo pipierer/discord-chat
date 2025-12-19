@@ -1,0 +1,24 @@
+<?php
+session_start();
+require "../core/db.php";
+
+if (!isset($_SESSION['user_id'])) die("Non connecté");
+
+$name = trim($_POST['name'] ?? '');
+if ($name === '') {
+    die("Nom du serveur manquant");
+}
+
+// Créer le serveur
+$stmt = $db->prepare("INSERT INTO servers (name, owner_id, is_public) VALUES (?, ?, ?)");
+$stmt->execute([$name, $_SESSION['user_id'], 1]); // par défaut public
+
+$server_id = $db->lastInsertId();
+
+// Ajouter le créateur comme membre
+$stmt = $db->prepare("INSERT INTO server_members (server_id, user_id, role) VALUES (?, ?, ?)");
+$stmt->execute([$server_id, $_SESSION['user_id'], 'owner']);
+
+// Rediriger vers le serveur
+header("Location: ../server.php?id=".$server_id);
+exit;
